@@ -9,6 +9,7 @@ from server.controllers import registrar_controladores
 from server.demonstracao import criar_demonstracao
 from server.config import configuracao
 from server.http import registrar_http
+from server.documentation import registrar_documentacao
 
 
 def create_app(livraria=None, config=None):
@@ -27,6 +28,7 @@ def create_app(livraria=None, config=None):
 
     registrar_http(app)
     registrar_controladores(app, demonstracao=demonstracao)
+    registrar_documentacao(app)
     return app
 
 

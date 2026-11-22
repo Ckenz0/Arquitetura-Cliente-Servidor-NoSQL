@@ -1,7 +1,7 @@
 ﻿# Validação
 
 Ambiente: Python 3.12, MongoDB 7.0 com replica set de um nó e navegador Chromium.
-A suíte completa executou 210 testes com sucesso, incluindo integração com banco
+A suíte completa executou 216 testes com sucesso, incluindo integração com banco
 real e os fluxos da interface em 1366 × 900 e 390 × 844.
 
 ## Cobertura
@@ -17,6 +17,8 @@ real e os fluxos da interface em 1366 × 900 e 390 × 844.
 - Isolamento dos dados de clientes e resposta 503 sem credenciais em falhas do banco.
 - Empacotamento sem segredos, arquivos locais, frontend no backend ou caches.
 - Interface original consumindo a API persistente por HTTP em outra origem.
+- Swagger UI em `/docs`, contrato público em `/openapi.json`, arquivos locais
+  e execução de uma requisição pela própria documentação em navegador real.
 
 ## Reproduzir
 

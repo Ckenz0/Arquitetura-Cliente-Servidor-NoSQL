@@ -3,3 +3,5 @@ itsdangerous>=2.2,<3
 python-dotenv>=1.1,<2
 waitress>=3.0.2,<4
 pymongo>=4.20.1,<4.21
+flask-swagger-ui>=5.35,<5.36
+PyYAML>=6,<7

@@ -26,6 +26,8 @@ Endereços atribuídos aos recursos:
 - Frontend: <https://jolly-smoke-081cd9510.3.azurestaticapps.net>.
 - API: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net>.
 - Saúde da API e conexão do banco: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/api/health>.
+- Documentação interativa: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/docs>.
+- Contrato OpenAPI: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/openapi.json>.
 
 Consulte os domínios reais depois de provisionar; eles não devem ser derivados
 do nome do recurso:
@@ -89,6 +91,11 @@ Mantenha TLS ativo e não use opções que desabilitem validação de certificad
 
 A inicialização da API aplica a migração idempotente. Se o banco estiver inacessível,
 a inicialização falha explicitamente; não há fallback para memória.
+
+O Swagger UI e seus arquivos são servidos pela própria API, sem CDN. O contrato
+publicado usa a raiz do servidor atual para executar requisições. A origem da
+própria API é permitida; no App Service, o HTTPS público é identificado pelo
+`WEBSITE_HOSTNAME` fornecido pela Azure.
 
 ## GitHub Actions
 

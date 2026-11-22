@@ -22,11 +22,12 @@ def verificar(resposta, caminho, metodo):
     Draft202012Validator({**schema, 'components': SPEC['components']}, format_checker=FormatChecker()).validate(resposta.json)
 
 
-def test_contrato_valido_e_todas_as_rotas_estao_documentadas():
+def test_contrato_valido_e_todas_as_rotas_de_negocio_estao_documentadas():
     validate(SPEC)
     registradas = {
         (re.sub(r'<([^>]+)>', r'{\1}', regra.rule), metodo.lower())
         for regra in create_app().url_map.iter_rules()
+        if regra.endpoint.split('.')[0] not in {'documentacao', 'swagger_ui'}
         for metodo in regra.methods - {'HEAD', 'OPTIONS'}
     }
     documentadas = {(caminho, metodo) for caminho, operacoes in SPEC['paths'].items() for metodo in operacoes}

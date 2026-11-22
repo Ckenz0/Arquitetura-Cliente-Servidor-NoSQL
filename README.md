@@ -6,6 +6,7 @@ em Azure Cosmos DB for MongoDB.
 
 [Abrir a livraria](https://jolly-smoke-081cd9510.3.azurestaticapps.net) ·
 [API](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net) ·
+[Documentação interativa](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/docs) ·
 [Health check](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/api/health)
 
 ## Arquitetura
@@ -23,6 +24,10 @@ Navegador ⇄ HTTP/JSON + Bearer ⇄ API Flask
 O cliente está em `client/`, a API em `server/` e o contrato HTTP em
 [server/openapi.yaml](server/openapi.yaml). A separação entre cliente e servidor
 permite publicar cada parte em um serviço independente.
+
+A documentação interativa fica em `/docs`, e o contrato JSON em `/openapi.json`.
+Para testar operações autenticadas no Swagger UI, execute `POST /api/sessoes`,
+copie o campo `token` da resposta e informe-o em **Authorize**.
 
 O banco guarda catálogo, estoque, clientes, reservas, avaliações, preferências,
 lista de desejos, compras, pontos, cupons, notificações, fila, agendamentos,

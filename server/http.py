@@ -2,6 +2,7 @@
 
 from time import perf_counter
 from uuid import uuid4
+import os
 
 from flask import g, jsonify, request
 from werkzeug.exceptions import HTTPException
@@ -10,12 +11,22 @@ from server.domain.regras import ErroLivraria
 
 
 def registrar_http(app):
+    def origem_permitida(origem):
+        if not origem:
+            return False
+        if origem in app.config['ALLOWED_ORIGINS'] or origem == request.host_url.rstrip('/'):
+            return True
+        # O App Service termina HTTPS no proxy e informa seu hostname público.
+        hostname = os.environ.get('WEBSITE_HOSTNAME')
+        return (app.config['APP_ENV'] == 'production' and bool(hostname)
+                and origem == f'https://{hostname}')
+
     @app.before_request
     def preparar_requisicao():
         g.inicio = perf_counter()
         g.request_id = uuid4().hex
         origem = request.headers.get('Origin')
-        if origem and origem not in app.config['ALLOWED_ORIGINS']:
+        if origem and not origem_permitida(origem):
             raise ErroLivraria('Origem não permitida.', 403)
         if request.method == 'OPTIONS' and request.url_rule is not None:
             metodo = request.headers.get('Access-Control-Request-Method', '')
@@ -33,7 +44,7 @@ def registrar_http(app):
         resposta.headers['X-Request-ID'] = g.get('request_id', uuid4().hex)
         resposta.vary.add('Origin')
         origem = request.headers.get('Origin')
-        if origem in app.config['ALLOWED_ORIGINS']:
+        if origem_permitida(origem):
             resposta.headers['Access-Control-Allow-Origin'] = origem
             resposta.headers['Access-Control-Expose-Headers'] = 'X-Request-ID'
             if request.method == 'OPTIONS' and resposta.status_code == 204:
