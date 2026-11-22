@@ -1,7 +1,7 @@
 """Coordenação dos casos de uso, regras de domínio e repositórios."""
 
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from uuid import uuid4
 from contextlib import nullcontext
@@ -100,6 +100,15 @@ class Livraria(Catalogo):
 
     def _livro(self, livro_id):
         return self.repositorio.obter(livro_id)
+
+    @atomico
+    def iniciar_sessao_demonstrativa(self, cliente_id):
+        agora = self.agora()
+        self.registrar_compra(cliente_id, '1984', 20,
+                              expira_em=(agora + timedelta(days=3)).isoformat(),
+                              avisar_em=agora.isoformat())
+        self.conceder_cupom(cliente_id, 'BOASLEITURAS',
+                           'Cupom ilustrativo: consulte as condições no caixa.')
 
     @atomico
     def livro(self, livro_id, cliente_id=None):

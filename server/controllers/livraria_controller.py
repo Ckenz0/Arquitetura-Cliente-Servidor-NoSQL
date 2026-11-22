@@ -1,7 +1,5 @@
 """Apresentação HTTP: sessão, formato das requisições e respostas."""
 
-from datetime import timedelta
-
 from flask import Blueprint, g, jsonify, request
 
 from server.domain.regras import ErroLivraria
@@ -40,6 +38,9 @@ def registrar_controladores(app, *, demonstracao=False):
 
     @blueprint.get('/api/health')
     def health():
+        persistencia = getattr(loja, 'persistencia', None)
+        if persistencia is not None:
+            persistencia.health()
         return jsonify(status='ok')
 
     @blueprint.post('/api/sessoes')
@@ -48,12 +49,7 @@ def registrar_controladores(app, *, demonstracao=False):
             raise ErroLivraria('A sessão não aceita campos de identificação.')
         cliente_id, sessao = emitir_sessao()
         if demonstracao:
-            agora = loja.agora()
-            loja.registrar_compra(cliente_id, '1984', 20,
-                                  expira_em=(agora + timedelta(days=3)).isoformat(),
-                                  avisar_em=agora.isoformat())
-            loja.conceder_cupom(cliente_id, 'BOASLEITURAS',
-                               'Cupom ilustrativo: consulte as condições no caixa.')
+            loja.iniciar_sessao_demonstrativa(cliente_id)
         return jsonify(sessao), 201
 
     @blueprint.get("/api/estado")

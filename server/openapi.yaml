@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Entrelinhas — API cliente-servidor
-  version: 1.0.0
+  version: 2.0.0
   description: 'Contrato HTTP da demonstração. Dados em memória: reinício apaga alterações.
     Um processo, clientes anônimos, sem login ou pagamentos. Todas as respostas são
     no-store. OPTIONS permite apenas origens, métodos e cabeçalhos configurados e
@@ -49,6 +49,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       security: []
@@ -87,6 +89,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       security: []
@@ -121,6 +125,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       security: []
@@ -162,6 +168,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
   /api/livros:
@@ -195,6 +203,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       parameters:
@@ -242,6 +252,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       parameters:
@@ -279,6 +291,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -335,6 +349,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       parameters:
@@ -380,6 +396,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -422,6 +440,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -471,6 +491,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -520,6 +542,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -565,6 +589,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -604,6 +630,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -654,6 +682,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -707,6 +737,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -752,6 +784,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -800,6 +834,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -842,6 +878,8 @@ paths:
           $ref: '#/components/responses/Erro413'
         '415':
           $ref: '#/components/responses/Erro415'
+        '503':
+          $ref: '#/components/responses/Erro503'
         '500':
           $ref: '#/components/responses/Erro500'
       requestBody:
@@ -1342,6 +1380,12 @@ components:
             $ref: '#/components/schemas/Erro'
     Erro500:
       description: Erro interno sem detalhes privados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Erro'
+    Erro503:
+      description: Banco indispon?vel ou confirma??o incerta. Consulte o estado antes de repetir uma muta??o.
       content:
         application/json:
           schema:

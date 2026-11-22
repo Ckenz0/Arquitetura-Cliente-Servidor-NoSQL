@@ -15,6 +15,12 @@ from server.app import create_app
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.fixture(autouse=True)
+def armazenamento_de_regressao(monkeypatch):
+    """A suíte anterior testa o domínio isolado; integrações optam por MongoDB."""
+    monkeypatch.setenv('STORAGE_BACKEND', 'memory')
+
+
 @pytest.fixture
 def servidores():
     class ClienteHandler(SimpleHTTPRequestHandler):

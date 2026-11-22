@@ -37,9 +37,9 @@ def loja_persistente(collection):
 
 
 def preparar(collection):
+    from server.persistence.migrations import migrar
     loja = loja_persistente(collection)
-    # A unidade executa a mesma inicialização usada pelas migrações.
-    loja.persistencia.executar(lambda: None, inicializar=True)
+    migrar(loja)
     return loja
 
 
@@ -93,7 +93,7 @@ def test_todos_os_dados_sobrevivem_nova_instancia(colecao_mongo):
     assert outra.estado('bia')['reservas'] == []
     assert outra.estado('bia')['desejos'] == []
     assert outra.buscar_por_titulo('1984')[0]['estoque'] == 2
-    assert colecao_mongo.count_documents({'tipo': 'livros'}) == 5
+    assert colecao_mongo.count_documents({'tipo': 'livros'}) == 12
     assert colecao_mongo.count_documents({'tipo': 'reservas'}) == 1
     with pytest.raises(ErroLivraria, match='já publicou'):
         outra.publicar_avaliacao('ana', '1984', 3, 'Repetida.')

@@ -17,7 +17,12 @@ def create_app(livraria=None, config=None):
     app.logger.setLevel(logging.INFO)
     app.json.ensure_ascii = False
     demonstracao = livraria is None
-    loja = criar_demonstracao() if demonstracao else livraria
+    if demonstracao and app.config['STORAGE_BACKEND'] == 'mongodb':
+        from server.persistence.factory import criar_livraria_mongo
+        loja, store = criar_livraria_mongo(app.config)
+        app.extensions['mongo'] = store
+    else:
+        loja = criar_demonstracao() if demonstracao else livraria
     app.extensions["livraria"] = loja
 
     registrar_http(app)

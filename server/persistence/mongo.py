@@ -48,12 +48,11 @@ class MongoStore:
                     # Não reexecutar o caso de uso: o servidor pode ter gravado.
                     raise BancoIndisponivel() from None
 
-    def executar(self, operacao, *, inicializar=False):
+    def executar(self, operacao):
         with self.loja._lock:
             if self._executando:
                 return operacao()
             self._executando = True
-            iniciais = exportar(self.loja) if inicializar else None
             try:
                 for tentativa in range(3):
                     try:
@@ -70,7 +69,7 @@ class MongoStore:
                                     'chave': 1, 'livro_id': 1, 'cliente_id': 1,
                                 }, session=session))
                                 antes = {doc['_id']: doc for doc in documentos}
-                                restaurar(self.loja, documentos or list((iniciais or {}).values()))
+                                restaurar(self.loja, documentos)
                                 resultado = operacao()
                                 depois = exportar(self.loja)
                                 comandos = [
