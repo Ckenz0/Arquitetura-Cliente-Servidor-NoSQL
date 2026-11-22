@@ -31,9 +31,9 @@ docker compose config --quiet
 As integrações usam nomes de banco temporários aleatórios e removem apenas os
 bancos criados pelo próprio cenário. O MongoDB de produção não é usado pela suíte.
 
-## Rein?cio do cont?iner
+## Reinício do contêiner
 
-O conjunto completo tamb?m foi executado com `docker compose up --build -d`.
-Uma sess?o HTTP reservou um livro e salvou prefer?ncias. Ap?s `docker compose
-restart api`, a mesma sess?o recuperou os dados e cancelou a reserva, devolvendo
+O conjunto completo também foi executado com `docker compose up --build -d`.
+Uma sessão HTTP reservou um livro e salvou preferências. Após `docker compose
+restart api`, a mesma sessão recuperou os dados e cancelou a reserva, devolvendo
 o exemplar ao estoque. O frontend e a API foram acessados nas portas 8080 e 5000.

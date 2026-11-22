@@ -3,6 +3,18 @@ name: Validate and deploy API
 on:
   push:
     branches: [main]
+    paths:
+      - 'server/**'
+      - 'tests/**'
+      - 'scripts/package_backend.py'
+      - 'requirements*.txt'
+      - 'startup.sh'
+      - 'pytest.ini'
+      - '.python-version'
+      - 'compose.yaml'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/backend.yml'
   pull_request:
   workflow_dispatch:
 

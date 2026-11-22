@@ -2,8 +2,8 @@ openapi: 3.1.0
 info:
   title: Entrelinhas — API cliente-servidor
   version: 2.0.0
-  description: 'Contrato HTTP da demonstração. Dados em memória: reinício apaga alterações.
-    Um processo, clientes anônimos, sem login ou pagamentos. Todas as respostas são
+  description: 'Contrato HTTP da livraria com persistência em Cosmos DB for MongoDB.
+    Clientes anônimos, sem login ou pagamentos. Todas as respostas são
     no-store. OPTIONS permite apenas origens, métodos e cabeçalhos configurados e
     não cria identidades.'
 servers:
@@ -100,8 +100,8 @@ paths:
       summary: criar sessao anonima
       description: 'Cria identidade anônima, sem login, válida por 86400 segundos.
         Sem cookie; enviar token em Authorization: Bearer. Corpo ausente ou {}. Não
-        recebe cliente_id. Reiniciar o backend remove dados em memória; a chave estável
-        preserva a assinatura, mas não recupera os dados.'
+        recebe cliente_id. Uma SECRET_KEY estável mantém os tokens válidos após
+        reiniciar o backend, dentro do prazo de 24 horas. Os dados permanecem no MongoDB.'
       responses:
         '201':
           description: Operação concluída.
@@ -1385,7 +1385,7 @@ components:
           schema:
             $ref: '#/components/schemas/Erro'
     Erro503:
-      description: Banco indispon?vel ou confirma??o incerta. Consulte o estado antes de repetir uma muta??o.
+      description: Banco indisponível ou confirmação incerta. Consulte o estado antes de repetir uma mutação.
       content:
         application/json:
           schema:

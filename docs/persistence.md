@@ -81,7 +81,7 @@ o consumo de RU e a duração das operações conforme o banco cresce. Fila, com
 e opiniões também exigem limites de retenção e paginação para crescer com segurança.
 O modelo não foi dimensionado para alto volume ou coleções particionadas.
 
-A depend?ncia PyMongo ? limitada ? s?rie 4.20 para manter a compatibilidade com
-o runtime validado. A s?rie 4.18 removeu o suporte ao protocolo MongoDB 4.2;
-n?o use uma conta Cosmos 3.6 ou 4.2 com esta configura??o. Consulte a
+A dependência PyMongo é limitada à série 4.20, validada com Cosmos DB for MongoDB
+7.0 e com o MongoDB 7.0 local. Aguarde a propagação da versão do Cosmos antes de
+iniciar a API; o endpoint precisa oferecer um protocolo compatível. Consulte a
 [tabela de compatibilidade do driver](https://www.mongodb.com/docs/drivers/compatibility/?driver-language=python&python-driver-framework=pymongo).
