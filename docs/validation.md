@@ -61,3 +61,9 @@ Publicação e validação automática concluídas com sucesso:
 
 - [Workflow da API](https://github.com/Ckenz0/Arquitetura-Cliente-Servidor-NoSQL/actions/runs/45054811676).
 - [Workflow do frontend](https://github.com/Ckenz0/Arquitetura-Cliente-Servidor-NoSQL/actions/runs/45054811560).
+
+A documentação publicada também foi verificada em navegador real:
+`/docs` carregou o Swagger UI e `/openapi.json` respondeu 200. Pela interface,
+`POST /api/sessoes` respondeu 201 e, após autorizar com o token retornado,
+`GET /api/livros` respondeu 200 com os 12 livros. Não ocorreram erros JavaScript.
+A correção foi publicada pelo [workflow da API](https://github.com/Ckenz0/Arquitetura-Cliente-Servidor-NoSQL/actions/runs/45057777352).
