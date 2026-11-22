@@ -1,0 +1,13 @@
+*
+!Dockerfile
+!requirements.txt
+!startup.sh
+!server/
+!server/**
+**/__pycache__/
+**/*.pyc
+**/.env*
+**/AGENTS.md
+**/agents.md
+**/.superpowers/
+**/superpowers/

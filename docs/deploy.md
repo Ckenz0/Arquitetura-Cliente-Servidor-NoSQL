@@ -1,146 +1,155 @@
-# Deploy na Azure
+﻿# Deploy na Azure
 
-O frontend usa Azure Static Web Apps e o backend usa Azure App Service
-Linux. O navegador recebe os arquivos estáticos de uma origem e acessa
-diretamente a API Flask em outra, por HTTPS/JSON. Não há Azure Functions
-nem proxy no frontend.
+O frontend executa no Azure Static Web Apps; a API Flask executa no App Service
+Linux e acessa o Cosmos DB for MongoDB 7.0. O navegador fala somente com a API,
+por HTTPS/JSON, sem receber a conexão do banco.
 
 ## Recursos
 
-| Parte | Recurso | Plano | Região |
-| --- | --- | --- | --- |
-| Frontend | `entrelinhas-front-ckenz0` | Static Web Apps Free | Central US |
-| Backend | `entrelinhas-api-ckenz0` | App Service Linux F1 | Brazil South |
+Grupo de recursos: `livraria-entrelinhas-nosql`.
 
-Grupo de recursos: `livraria-entrelinhas`.
+| Componente | Recurso | Região |
+| --- | --- | --- |
+| Frontend | `entrelinhas-nosql-front-ckenz0` | Central US |
+| API | `entrelinhas-nosql-api-ckenz0` | Brazil South |
+| Plano da API | `entrelinhas-nosql-plan` | Brazil South |
+| Banco | `entrelinhas-nosql-ckenz0` | Brazil South |
+| Identidade de CI | `entrelinhas-nosql-github` | Brazil South |
 
-Domínio atribuído ao frontend:
-`https://purple-rock-035da0010.3.azurestaticapps.net`.
+Os recursos são independentes da versão anterior da livraria.
+O template usa Static Web Apps Free, App Service F1 e Cosmos com free tier
+habilitado e uma coleção de 400 RU/s. A assinatura precisa ter o free tier
+do Cosmos disponível; mudar essa configuração pode gerar cobrança.
 
-Domínio do backend:
-`https://entrelinhas-api-ckenz0-h7hkgaaxecbqezhn.brazilsouth-01.azurewebsites.net`.
+Endereços atribuídos aos recursos:
 
-## Consultar os domínios
+- Frontend: <https://jolly-smoke-081cd9510.3.azurestaticapps.net>.
+- API: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net>.
+- Saúde da API e conexão do banco: <https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/api/health>.
 
-Comandos em Bash no Azure Cloud Shell, já autenticado:
+Consulte os domínios reais depois de provisionar; eles não devem ser derivados
+do nome do recurso:
 
-```bash
-az account set --subscription a8e0c9f2-aebe-415a-8afa-629c61ea8bce
-API_HOST=$(az webapp show -g livraria-entrelinhas -n entrelinhas-api-ckenz0 --query defaultHostName -o tsv)
-FRONT_HOST=$(az staticwebapp show -g livraria-entrelinhas -n entrelinhas-front-ckenz0 --query defaultHostname -o tsv)
-printf 'API: https://%s\nFrontend: https://%s\n' "$API_HOST" "$FRONT_HOST"
+```powershell
+az webapp show -g livraria-entrelinhas-nosql -n entrelinhas-nosql-api-ckenz0 --query defaultHostName -o tsv
+az staticwebapp show -g livraria-entrelinhas-nosql -n entrelinhas-nosql-front-ckenz0 --query defaultHostname -o tsv
 ```
 
-O App Service usa um hostname com sufixo gerado. Consulte `defaultHostName`
-em vez de derivar a URL do nome do recurso.
+## Provisionamento
 
-## Regiões permitidas
+O template [infrastructure/azure.json](../infrastructure/azure.json) cria plano,
+API, frontend, conta Cosmos, banco `entrelinhas` e coleção `livraria` sem shard key.
+Também configura a API com a conexão do banco e a origem correta do frontend.
+O parâmetro `secretKey` é `securestring` e não aparece nas saídas do deployment.
 
-A assinatura restringe a criação de recursos por região. Consulte a
-interseção entre as regiões permitidas e as suportadas pelo serviço:
-
-```bash
-az policy assignment list --scope /subscriptions/a8e0c9f2-aebe-415a-8afa-629c61ea8bce --query '[].{politica:displayName,parametros:parameters}' -o json
-az provider show --namespace Microsoft.Web --query "resourceTypes[?resourceType=='staticSites'].locations | [0]" -o json
+```powershell
+az login
+az provider register --namespace Microsoft.DocumentDB --wait
+az group create --name livraria-entrelinhas-nosql --location brazilsouth
 ```
 
-Na criação deste frontend, a interseção encontrada foi Central US.
+Prepare `.env.azure.parameters.json` localmente, usando uma chave aleatória estável
+com pelo menos 32 caracteres. O padrão `.env.*` impede seu versionamento:
 
-## Configurar a API
+```json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "secretKey": { "value": "SUBSTITUA_POR_UMA_CHAVE_ALEATORIA_E_ESTAVEL" }
+  }
+}
+```
 
-| Configuração | Valor |
+```powershell
+az deployment group create --name entrelinhas-nosql-infra --resource-group livraria-entrelinhas-nosql --template-file infrastructure/azure.json --parameters '@.env.azure.parameters.json'
+```
+
+Preserve a mesma chave em novas aplicações do template. Confira que a conta
+Cosmos esteja com protocolo 7.0 antes de iniciar a API. A criação ou atualização
+da versão do serviço pode levar alguns minutos para se propagar. Não configure
+shard key nessa coleção: as transações dependem de uma coleção não particionada.
+
+## Configuração da API
+
+| Variável | Valor |
 | --- | --- |
-| Runtime | Python 3.12, Linux |
-| Startup command | `bash startup.sh` |
 | `APP_ENV` | `production` |
-| `SECRET_KEY` | Chave aleatória estável, com pelo menos 32 caracteres, apenas no backend |
-| `ALLOWED_ORIGINS` | `https://purple-rock-035da0010.3.azurestaticapps.net` |
+| `STORAGE_BACKEND` | `mongodb` |
+| `MONGODB_URI` | Conexão autenticada do Cosmos, somente no backend |
+| `MONGODB_DATABASE` | `entrelinhas` |
+| `MONGODB_COLLECTION` | `livraria` |
+| `SECRET_KEY` | Chave aleatória estável |
+| `ALLOWED_ORIGINS` | Origem HTTPS exata do frontend, sem barra final |
 | `SCM_DO_BUILD_DURING_DEPLOYMENT` | `true` |
 
-Ative HTTPS only. Use uma única instância e o único processo Waitress com
-quatro threads definido em `startup.sh`. Os dados ficam em memória;
-reinícios apagam alterações. Uma chave estável não recupera dados perdidos.
-Não configure múltiplos workers ou réplicas.
+Runtime: Python 3.12 em Linux. Startup command: `bash startup.sh`.
+O cliente PyMongo desativa `retryWrites` para a compatibilidade com Cosmos.
+Mantenha TLS ativo e não use opções que desabilitem validação de certificados.
 
-Gere o pacote de execução:
+A inicialização da API aplica a migração idempotente. Se o banco estiver inacessível,
+a inicialização falha explicitamente; não há fallback para memória.
 
-```bash
-python scripts/package_backend.py --output dist/backend-azure.zip
-```
+## GitHub Actions
 
-O ZIP contém `requirements.txt`, `startup.sh` e `server/` na raiz, sem
-frontend, documentação, caches ou arquivos locais. Habilite o build remoto
-para que a Azure instale as dependências Python.
+Os workflows `backend.yml` e `frontend.yml` validam todos os pushes em `main` e
+pull requests. O backend usa MongoDB real com replica set para as integrações;
+o frontend também executa os testes de navegador. A publicação ocorre apenas em
+`main`, após a validação e com `AZURE_DEPLOY_ENABLED=true`.
 
-## Configurar GitHub Actions
+Configure em **Settings → Secrets and variables → Actions**:
 
-No repositório, abra **Settings → Secrets and variables → Actions**:
-
-| Tipo | Nome | Valor |
+| Tipo | Nome | Conteúdo |
 | --- | --- | --- |
+| Variable | `AZURE_DEPLOY_ENABLED` | `true` após configurar a infraestrutura |
+| Variable | `AZURE_WEBAPP_NAME` | `entrelinhas-nosql-api-ckenz0` |
 | Variable | `AZURE_API_BASE_URL` | Origem HTTPS real da API, sem `/api` |
-| Secret | `AZURE_CLIENT_ID` | Client ID da identidade com acesso ao App Service |
+| Secret | `AZURE_CLIENT_ID` | Client ID da identidade federada |
 | Secret | `AZURE_TENANT_ID` | Tenant ID |
-| Secret | `AZURE_SUBSCRIPTION_ID` | ID da assinatura |
-| Secret | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Token do Static Web App, em Manage deployment token |
+| Secret | `AZURE_SUBSCRIPTION_ID` | Assinatura |
+| Secret | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Token de publicação do Static Web App |
 
-Configure a identidade federada OIDC do backend com:
+A identidade gerenciada `entrelinhas-nosql-github` usa federação OIDC com:
 
 - Issuer: `https://token.actions.githubusercontent.com`.
 - Audience: `api://AzureADTokenExchange`.
-- Subject: `repo:Ckenz0@146033211/Arquitetura-Cliente-Servidor@1442157347:ref:refs/heads/main`.
-- Permissão de publicação no App Service, por exemplo **Website Contributor**
-  no escopo desse recurso.
+- Subject: `repo:Ckenz0@146033211/Arquitetura-Cliente-Servidor-NoSQL@1467822683:ref:refs/heads/main`.
+- Role: `Website Contributor`, no escopo exclusivo da API desta versão.
 
-O workflow já solicita `id-token: write`; OIDC não precisa de client secret.
-O subject usa os IDs imutáveis do proprietário e do repositório, conforme a
-configuração OIDC deste repositório. Consulte o prefixo atual com
-`gh api repos/Ckenz0/Arquitetura-Cliente-Servidor/actions/oidc/customization/sub`
-antes de configurar a credencial federada.
-O token do Static Web Apps pertence somente aos secrets do GitHub.
-Não coloque tokens ou `SECRET_KEY` no JavaScript ou em arquivos rastreados.
+Esse subject foi consultado na configuração OIDC do repositório, que usa IDs
+imutáveis. Uma cópia do projeto precisa consultar seu próprio prefixo, e não
+reutilizar o identificador deste repositório. OIDC não exige client secret.
+A identidade de publicação é criada separadamente do template de infraestrutura.
 
-## Publicação
+## Publicação manual
 
-- `main_entrelinhas-api-ckenz0.yml` valida e empacota a API, autentica via
-  OIDC, publica o ZIP e verifica `/api/health`.
-- `azure-static-web-apps.yml` valida o empacotamento e a sintaxe JS, prepara
-  os assets e publica apenas `dist/client/`.
-
-Os workflows estão em `.github/workflows/`, publicam a branch `main` e
-aceitam execução manual em **Actions → Run workflow**. Pull requests
-executam validações sem publicar. A falta de configuração causa falha
-explícita na etapa de deploy.
-
-O frontend gera `dist/client/config.js` com `AZURE_API_BASE_URL`.
-`client/config.js` preserva localhost para desenvolvimento. Variáveis do
-painel do Static Web Apps não alteram JavaScript estático automaticamente.
-`api_location` fica vazio: a API Flask executa no App Service separado.
-
-Para preparar os assets localmente:
-
-```bash
-python scripts/package_frontend.py --api-url "https://$API_HOST"
+```powershell
+python scripts/package_backend.py --output dist/backend-azure.zip
+az webapp deploy -g livraria-entrelinhas-nosql -n entrelinhas-nosql-api-ckenz0 --src-path dist/backend-azure.zip --type zip
+python scripts/package_frontend.py --api-url https://entrelinhas-nosql-api-ckenz0.azurewebsites.net
 ```
 
-## Verificar a aplicação
+O ZIP do backend inclui somente os arquivos de execução da API. O frontend
+publica somente `dist/client/`, pelo workflow ou pelo Static Web Apps CLI.
+`api_location` fica vazio porque o Flask é hospedado separadamente.
 
-1. A API deve responder 200 com `{"status":"ok"}` em `/api/health`.
-2. Abra o frontend e confira catálogo, busca e detalhes.
-3. Reserve um exemplar, altere o prazo e cancele; confira o estoque.
-4. Publique uma avaliação e confira sua visibilidade em outra sessão,
-   mantendo o isolamento das reservas.
-5. Salve preferências e recarregue.
-6. Em Network, confira assets no domínio do Static Web Apps e chamadas
-   `/api/` no domínio do App Service, com Bearer e sem erros de CORS ou
-   conteúdo misto.
+## Conferir a publicação
 
-Criar os recursos não comprova que a aplicação foi publicada.
+1. Verifique `/api/health`: resposta 200 com `{"status":"ok"}`.
+2. Abra o frontend e confira catálogo, busca, detalhes e avaliações.
+3. Faça uma reserva e salve preferências.
+4. Reinicie somente a API, mantendo o banco e a chave.
+5. Recarregue a mesma aba; confira a reserva, o estoque e as preferências.
+6. Cancele a reserva e confirme a devolução de apenas um exemplar.
+7. Confira em Network que assets vêm do Static Web Apps e chamadas `/api/`
+   chegam ao App Service por HTTPS, sem erros de CORS.
+
+Os registros do teste publicado ficam em [validation.md](validation.md).
+Criar os recursos, por si só, não comprova o funcionamento da aplicação.
 
 ## Referências
 
-- [Static Web Apps: configuração de build](https://learn.microsoft.com/en-us/azure/static-web-apps/build-configuration).
+- [Cosmos DB for MongoDB: transações e limitações](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/feature-support-70).
 - [App Service: deploy ZIP e build remoto](https://learn.microsoft.com/en-us/azure/app-service/deploy-zip).
-- [App Service: GitHub Actions e OIDC](https://learn.microsoft.com/en-us/azure/app-service/deploy-github-actions).
-- [GitHub: subjects OIDC com IDs imutáveis](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).
-- [Diagnóstico de bloqueio por política](https://learn.microsoft.com/en-us/azure/azure-resource-manager/troubleshooting/error-policy-requestdisallowedbypolicy).
+- [App Service: GitHub Actions com identidade federada](https://learn.microsoft.com/en-us/azure/app-service/deploy-github-actions).
+- [GitHub: subjects OIDC imutáveis](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims).

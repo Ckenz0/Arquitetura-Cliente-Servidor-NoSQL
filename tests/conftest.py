@@ -22,7 +22,7 @@ def armazenamento_de_regressao(monkeypatch):
 
 
 @pytest.fixture
-def servidores():
+def servidores(request):
     class ClienteHandler(SimpleHTTPRequestHandler):
         def do_GET(self):
             if self.path == '/config.js':
@@ -38,7 +38,12 @@ def servidores():
 
     cliente = ThreadingHTTPServer(('127.0.0.1', 0), partial(ClienteHandler, directory=str(ROOT / 'client')))
     origem = f'http://127.0.0.1:{cliente.server_port}'
-    app = create_app(config={'ALLOWED_ORIGINS': (origem,), 'SECRET_KEY': 'ambiente-de-interface-chave-estavel'})
+    config = {'ALLOWED_ORIGINS': (origem,), 'SECRET_KEY': 'ambiente-de-interface-chave-estavel'}
+    if getattr(request, 'param', None) == 'mongodb':
+        collection = request.getfixturevalue('colecao_mongo')
+        config.update(STORAGE_BACKEND='mongodb', MONGODB_URI=os.environ['TEST_MONGODB_URI'],
+                      MONGODB_DATABASE=collection.database.name, MONGODB_COLLECTION=collection.name)
+    app = create_app(config=config)
     api = make_server('127.0.0.1', 0, app, threaded=True)
     api_url = f'http://127.0.0.1:{api.server_port}'
     cliente.api_url = api_url
@@ -53,6 +58,8 @@ def servidores():
             servidor.server_close()
         for thread in threads:
             thread.join(timeout=5)
+        if 'mongo' in app.extensions:
+            app.extensions['mongo'].client.close()
 
 
 @pytest.fixture

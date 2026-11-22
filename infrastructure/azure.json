@@ -1,0 +1,192 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "prefix": {
+      "type": "string",
+      "defaultValue": "entrelinhas-nosql"
+    },
+    "suffix": {
+      "type": "string",
+      "defaultValue": "ckenz0"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "brazilsouth"
+    },
+    "frontendLocation": {
+      "type": "string",
+      "defaultValue": "centralus"
+    },
+    "secretKey": {
+      "type": "securestring",
+      "minLength": 32
+    },
+    "enableFreeTier": {
+      "type": "bool",
+      "defaultValue": true
+    }
+  },
+  "variables": {
+    "cosmosName": "[concat(parameters('prefix'), '-', parameters('suffix'))]",
+    "apiName": "[concat(parameters('prefix'), '-api-', parameters('suffix'))]",
+    "frontName": "[concat(parameters('prefix'), '-front-', parameters('suffix'))]",
+    "planName": "[concat(parameters('prefix'), '-plan')]",
+    "database": "entrelinhas",
+    "collection": "livraria"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2024-05-15",
+      "name": "[variables('cosmosName')]",
+      "location": "[parameters('location')]",
+      "kind": "MongoDB",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "enableFreeTier": "[parameters('enableFreeTier')]",
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0
+          }
+        ],
+        "capabilities": [
+          {
+            "name": "EnableMongo"
+          }
+        ],
+        "apiProperties": {
+          "serverVersion": "7.0"
+        },
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "minimalTlsVersion": "Tls12"
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(variables('cosmosName'), '/', variables('database'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[variables('database')]"
+        },
+        "options": {}
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections",
+      "apiVersion": "2024-05-15",
+      "name": "[concat(variables('cosmosName'), '/', variables('database'), '/', variables('collection'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/mongodbDatabases',variables('cosmosName'),variables('database'))]"
+      ],
+      "properties": {
+        "resource": {
+          "id": "[variables('collection')]"
+        },
+        "options": {
+          "throughput": 400
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('planName')]",
+      "location": "[parameters('location')]",
+      "kind": "linux",
+      "sku": {
+        "name": "F1",
+        "tier": "Free",
+        "capacity": 1
+      },
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/staticSites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('frontName')]",
+      "location": "[parameters('frontendLocation')]",
+      "sku": {
+        "name": "Free",
+        "tier": "Free"
+      },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-12-01",
+      "name": "[variables('apiName')]",
+      "location": "[parameters('location')]",
+      "kind": "app,linux",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms',variables('planName'))]",
+        "[resourceId('Microsoft.Web/staticSites',variables('frontName'))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections',variables('cosmosName'),variables('database'),variables('collection'))]"
+      ],
+      "properties": {
+        "httpsOnly": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms',variables('planName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "PYTHON|3.12",
+          "appCommandLine": "bash startup.sh",
+          "alwaysOn": false,
+          "minTlsVersion": "1.2",
+          "ftpsState": "Disabled",
+          "appSettings": [
+            {
+              "name": "APP_ENV",
+              "value": "production"
+            },
+            {
+              "name": "STORAGE_BACKEND",
+              "value": "mongodb"
+            },
+            {
+              "name": "SECRET_KEY",
+              "value": "[parameters('secretKey')]"
+            },
+            {
+              "name": "ALLOWED_ORIGINS",
+              "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites',variables('frontName')),'2023-12-01').defaultHostname)]"
+            },
+            {
+              "name": "MONGODB_URI",
+              "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts',variables('cosmosName')),'2024-05-15').connectionStrings[0].connectionString]"
+            },
+            {
+              "name": "MONGODB_DATABASE",
+              "value": "[variables('database')]"
+            },
+            {
+              "name": "MONGODB_COLLECTION",
+              "value": "[variables('collection')]"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "frontendUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/staticSites',variables('frontName')),'2023-12-01').defaultHostname)]"
+    },
+    "apiUrl": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites',variables('apiName')),'2023-12-01').defaultHostName)]"
+    }
+  }
+}

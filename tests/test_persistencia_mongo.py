@@ -156,3 +156,50 @@ def test_leitura_nao_regrava_documentos(colecao_mongo):
     loja.buscar()
     loja.livro('1984')
     assert list(colecao_mongo.find()) == antes
+
+
+@pytest.mark.mongo
+@pytest.mark.parametrize('confirmacao', ['recuperada', 'indisponivel'])
+def test_commit_incerto_nunca_repete_reserva(colecao_mongo, monkeypatch, confirmacao):
+    from pymongo.errors import OperationFailure
+    from pymongo.synchronous.client_session import ClientSession
+    from server.persistence.mongo import BancoIndisponivel
+    loja = preparar(colecao_mongo)
+    commit_real = ClientSession.commit_transaction
+    commits = []
+    def confirmar(session):
+        commits.append(session)
+        if len(commits) == 1:
+            commit_real(session)
+        if confirmacao == 'indisponivel' or len(commits) == 1:
+            raise OperationFailure('resposta perdida', details={
+                'errorLabels': ['UnknownTransactionCommitResult'],
+            })
+        return commit_real(session)
+    monkeypatch.setattr(ClientSession, 'commit_transaction', confirmar)
+    if confirmacao == 'indisponivel':
+        with pytest.raises(BancoIndisponivel):
+            loja.reservar('ana', '1984', prazo())
+    else:
+        assert loja.reservar('ana', '1984', prazo())['cliente_id'] == 'ana'
+    monkeypatch.setattr(ClientSession, 'commit_transaction', commit_real)
+    outra = loja_persistente(colecao_mongo)
+    assert outra.livro('1984')['estoque'] == 2
+    assert len(outra.reservas('ana')) == 1
+
+
+@pytest.mark.mongo
+def test_conflitos_esgotados_nao_deixam_alteracoes(colecao_mongo, monkeypatch):
+    from pymongo.errors import OperationFailure
+    from pymongo.synchronous.client_session import ClientSession
+    from server.persistence.mongo import BancoIndisponivel
+    loja = preparar(colecao_mongo)
+    commit_real = ClientSession.commit_transaction
+    def conflito(session):
+        raise OperationFailure('conflito', details={'errorLabels': ['TransientTransactionError']})
+    monkeypatch.setattr(ClientSession, 'commit_transaction', conflito)
+    with pytest.raises(BancoIndisponivel):
+        loja.reservar('ana', '1984', prazo())
+    monkeypatch.setattr(ClientSession, 'commit_transaction', commit_real)
+    assert loja_persistente(colecao_mongo).livro('1984')['estoque'] == 3
+    assert colecao_mongo.count_documents({'tipo': 'reservas'}) == 0
