@@ -37,3 +37,25 @@ O conjunto completo também foi executado com `docker compose up --build -d`.
 Uma sessão HTTP reservou um livro e salvou preferências. Após `docker compose
 restart api`, a mesma sessão recuperou os dados e cancelou a reserva, devolvendo
 o exemplar ao estoque. O frontend e a API foram acessados nas portas 8080 e 5000.
+
+## Aplicação publicada
+
+Verificação realizada em 22 de novembro de 2026, usando Cosmos DB for MongoDB
+7.0 e PyMongo 4.20.1 na composição de produção.
+
+- [Frontend](https://jolly-smoke-081cd9510.3.azurestaticapps.net): catálogo de
+  12 livros, busca funcional e nenhum erro JavaScript em desktop e celular.
+- [API](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/api/health):
+  health check respondeu 200, incluindo a conexão com o banco.
+- Uma sessão HTTP salvou reserva com embrulho, preferências, desejos, avaliação,
+  fila, agendamento, inscrição em evento, participação e opinião em clube.
+- Após reiniciar o App Service, a mesma sessão recuperou todos esses dados,
+  incluindo compras, pontos e cupom inicial. A baixa de estoque permaneceu.
+- Cancelar duas vezes a mesma reserva devolveu apenas um exemplar ao estoque.
+- Os registros públicos criados exclusivamente para essa verificação foram
+  removidos ao final; o catálogo e o estoque foram preservados.
+
+Publicação e validação automática concluídas com sucesso:
+
+- [Workflow da API](https://github.com/Ckenz0/Arquitetura-Cliente-Servidor-NoSQL/actions/runs/45054811676).
+- [Workflow do frontend](https://github.com/Ckenz0/Arquitetura-Cliente-Servidor-NoSQL/actions/runs/45054811560).

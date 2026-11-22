@@ -4,6 +4,10 @@ Livraria com catálogo de 12 livros, reservas, avaliações, fidelidade e comuni
 Frontend independente em HTML, CSS e JavaScript, API Flask e persistência completa
 em Azure Cosmos DB for MongoDB.
 
+[Abrir a livraria](https://jolly-smoke-081cd9510.3.azurestaticapps.net) ·
+[API](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net) ·
+[Health check](https://entrelinhas-nosql-api-ckenz0.azurewebsites.net/api/health)
+
 ## Arquitetura
 
 ```text
