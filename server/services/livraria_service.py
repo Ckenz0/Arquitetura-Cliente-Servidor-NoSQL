@@ -4,6 +4,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from functools import wraps
 from uuid import uuid4
+from contextlib import nullcontext
 
 from server.domain.avaliacao import Avaliacao
 from server.domain.regras import (
@@ -13,35 +14,43 @@ from server.domain.regras import (
 from server.repositories import RepositorioEstado, RepositorioLivros
 
 
+def atomico(metodo):
+    """Compartilha a transação persistente entre chamadas aninhadas."""
+    @wraps(metodo)
+    def executar(self, *args, **kwargs):
+        with getattr(self, '_lock', nullcontext()):
+            persistencia = getattr(self, 'persistencia', None)
+            if persistencia is not None:
+                return persistencia.executar(lambda: metodo(self, *args, **kwargs))
+            return metodo(self, *args, **kwargs)
+    return executar
+
+
 class Catalogo:
     """Consultas de catálogo fornecidas pelo repositório de livros."""
 
     def __init__(self, repositorio):
         self.repositorio = repositorio
 
+    @atomico
     def buscar_por_titulo(self, titulo):
         return self.repositorio.buscar_por_titulo(titulo)
 
+    @atomico
     def buscar_por_autor(self, autor):
         return self.repositorio.buscar_por_autor(autor)
 
+    @atomico
     def filtrar_por_genero(self, genero):
         return self.repositorio.filtrar_por_genero(genero)
 
+    @atomico
     def consultar_estoque(self, titulo):
         return self.repositorio.consultar_estoque(titulo)
 
+    @atomico
     def listar_lancamentos(self):
         return self.repositorio.listar_lancamentos()
-
-
-def atomico(metodo):
-    """Serializa operações compostas sobre os dados deste processo."""
-    @wraps(metodo)
-    def executar(self, *args, **kwargs):
-        with self._lock:
-            return metodo(self, *args, **kwargs)
-    return executar
 
 
 class Livraria(Catalogo):
